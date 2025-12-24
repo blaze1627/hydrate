@@ -3,13 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hi</title>
-    <script src="main.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    
+    <title>💧</title>
+    
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="card" class="card">Ace of Spades</div>
-    <div id="turn" class="turn">Your turn</div>
-    <button class="primary" id="nextBtn">Next Card</button>
+
+    <div id="landing" class="screen">
+        <h1>answer or hydrate.</h1>
+        <p>for jake, dec 2025 ♥</p>
+        <input id="nameInput" placeholder="Your name" />
+        <button id="joinBtn">Join Game</button>
+    </div>
+    <div id="game" class="screen hidden">
+        
+        <div id="main-cont" class="main-cont">
+             <div id="turn" class="turn">Your turn</div>
+            <div id="card-border" class="card-border">
+            <div id="card" class="card">Ace of Spades</div>
+        </div>
+       
+        </div>
+    
+        
+        <button id="yesBtn">  
+            <svg
+   width="60px"
+   height="50px"
+   viewBox="0 0 137.72429 96.619766"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     transform="translate(-31.390632,-99.050177)">
+    <rect
+       style="fill:#424242;stroke:#424242;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round"
+       id="rect1"
+       width="134.85135"
+       height="72.841286"
+       x="33.663574"
+       y="99.650169"
+       ry="12.676179" />
+    <path
+       id="rect2"
+       style="fill:#424242;stroke:#424242;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round"
+       d="m 46.662876,166.44696 h 26.939392 -0.24053 l -41.37121,28.6231 z" />
+  </g>
+</svg>
+</button>
+        <button id="noBtn">
+            <svg
+   width="40px"
+   height="50px"
+   viewBox="0 0 47.366215 59.488163"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     transform="translate(-79.182517,-57.417108)">
+    <path
+       id="rect4"
+       style="fill:#424242;stroke:#424242;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round"
+       d="m 118.42946,58.017131 c -0.80088,-0.09245 -0.4624,5.710354 -4.25452,11.80393 -3.79212,6.093577 -0.88397,10.586893 1.60559,12.11554 2.48955,1.528652 6.03945,0.865904 7.81089,-0.841293 1.77144,-1.707197 4.45961,-5.791587 -0.38757,-12.138794 -4.84714,-6.347205 -4.77439,-10.939383 -4.77439,-10.939383 z m -23.337073,0.734838 c -2.017388,-0.214666 -1.16546,13.258263 -10.717692,27.407113 -9.552232,14.148848 -2.226401,24.582728 4.044714,28.132138 6.271115,3.54942 15.213591,2.01062 19.675801,-1.95337 4.46221,-3.96399 11.23324,-13.448123 -0.97668,-28.185881 -12.209926,-14.737758 -12.026143,-25.4 -12.026143,-25.4 z" />
+  </g>
+</svg>
+
+        </button>
+<div id="players-cont" class="players-cont">
+
+            <div id="list-flex" class="list-flex">
+                 <svg
+   width="15px"
+   height="15px"
+   viewBox="0 0 47.366215 59.488163"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     transform="translate(-79.182517,-57.417108)">
+    <path
+       id="rect4"
+       style="fill:rgb(227, 227, 227);stroke:rgb(227, 227, 227);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round"
+       d="m 118.42946,58.017131 c -0.80088,-0.09245 -0.4624,5.710354 -4.25452,11.80393 -3.79212,6.093577 -0.88397,10.586893 1.60559,12.11554 2.48955,1.528652 6.03945,0.865904 7.81089,-0.841293 1.77144,-1.707197 4.45961,-5.791587 -0.38757,-12.138794 -4.84714,-6.347205 -4.77439,-10.939383 -4.77439,-10.939383 z m -23.337073,0.734838 c -2.017388,-0.214666 -1.16546,13.258263 -10.717692,27.407113 -9.552232,14.148848 -2.226401,24.582728 4.044714,28.132138 6.271115,3.54942 15.213591,2.01062 19.675801,-1.95337 4.46221,-3.96399 11.23324,-13.448123 -0.97668,-28.185881 -12.209926,-14.737758 -12.026143,-25.4 -12.026143,-25.4 z" />
+  </g>
+</svg> <div id ="text2">  count:</div></div>
+                <div id="players" class="players"></div>
+            
+            
+        </div>
+
+    </div>
+    <script src="main.js" defer></script>
+    
 </body>
 </html>
