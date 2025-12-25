@@ -17,12 +17,22 @@
         <h1>answer or hydrate.</h1>
         <p>for jake, dec 2025 ♥</p>
         <input id="nameInput" placeholder="Your name" />
-        <button id="joinBtn">Join Game</button>
+        <div id="box1">
+         <button id="makeRoomBtn">make room</button>
+         <div id="box2"><p>OR</p></div>
+      <div class="join">
+         <input id="roomCodeInput" placeholder="Room Code" maxlength="4" />
+         <button id="joinRoomBtn">join </button>
+      </div>
+
+        </div>
+         
+  </div>
     </div>
-    <div id="game" class="screen hidden">
+    <div id="game" hidden class="screen">
         
         <div id="main-cont" class="main-cont">
-             <div id="turn" class="turn">Your turn</div>
+                <h2 id="roomCodeDisplay"></h2> <div id="turn" class="turn">Your turn</div>
             <div id="card-border" class="card-border">
             <div id="card" class="card">Ace of Spades</div>
         </div>
