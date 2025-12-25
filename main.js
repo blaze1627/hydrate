@@ -20,29 +20,39 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
+
 // Get database reference
 const db = firebase.database();
-const gameRef = db.ref("game");
+//const gameRef = db.ref("game");
 
 
 
 const landing = document.getElementById("landing");
-const gameScreen = document.getElementById("game");
+const game = document.getElementById("game");
 
 const nameInput = document.getElementById("nameInput");
-const joinBtn = document.getElementById("joinBtn");
+const roomCodeInput = document.getElementById("roomCodeInput");
 
-const playersEl = document.getElementById("players");
+const makeRoomBtn = document.getElementById("makeRoomBtn");
+const joinRoomBtn = document.getElementById("joinRoomBtn");
+
+const roomCodeDisplay = document.getElementById("roomCodeDisplay");
 const cardEl = document.getElementById("card");
 const turnEl = document.getElementById("turn");
+const playersEl = document.getElementById("players");
+
 const yesBtn = document.getElementById("yesBtn");
 const noBtn = document.getElementById("noBtn");
-const resetBtn = document.getElementById("resetBtn");
+
+// Game state
+let roomRef;
+let playerId;
+
 
 // Player identity
-const playerId = "player-" + Math.random().toString(36).slice(2, 8);
-let playerName = null;
-let playerScore = 0;
+//const playerId = "player-" + Math.random().toString(36).slice(2, 8);
+//let playerName = null;
+//let playerScore = 0;
 
 // Cards
 const cards = [
@@ -262,8 +272,7 @@ const cards = [
   "What discontinued item would you give anything to bring back?",
   "When was the last time you laughed so hard you cried?",
   "What is something you know you’ll accomplish, no matter how many people tell you you can’t?",
-  "What is your happiest memory from when",
-  "you were a single- digit-aged child?",
+  "What is your happiest memory from when you were a single- digit-aged child?",
   "What bad habit have you kicked?",
   "What are you rooting for me to achieve?",
   "What did you do on your very first date ever?",
@@ -347,40 +356,133 @@ const cards = [
   "What are you anxious about? Can we reassure you?",
 ];
 
+function generateRoomCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({ length: 4 }, () =>
+    chars[Math.floor(Math.random() * chars.length)]
+  ).join("");
+}
 
-// --- JOIN GAME ---
-joinBtn.onclick = () => {
-  
+makeRoomBtn.onclick = async () => {
   const name = nameInput.value.trim();
   if (!name) return;
-  playerName = name;
- 
 
-  gameRef.transaction((state) => {
-  if (!state) {
-    return {
-      card: null,
-      currentTurn: playerId,
-      players: { [playerId]: { name: playerName, score: 0 }},
-      turnOrder: { [playerId]: true }
-    };
-  }
+  const code = generateRoomCode();
+  await db.ref("rooms").child(code).set({
+  card: "click to begin!",
+  currentTurn: null,
+  players: {},
+  turnOrder: {}
 
-  // Rebuild missing fields safely
-  const players = state.players || {};
-  const turnOrder = state.turnOrder || {};
-  const currentTurn = state.currentTurn || playerId;
-  const card = state.card || null;
-
-  if (!players[playerId]) {
-    players[playerId] = { name: playerName, score: 0 };
-  }
-
-  turnOrder[playerId] = true;
-
-  return { card, currentTurn, players, turnOrder };
 });
 
+  joinRoom(code, name);
+  
+};
+
+// --- JOIN ROOM ---
+joinRoomBtn.onclick = () => {
+  const name = nameInput.value.trim();
+  const code = roomCodeInput.value.trim().toUpperCase();
+  if (!name || !code) return;
+
+  db.ref("rooms").child(code).once("value", snap => {
+    if (!snap.exists()) return alert("Room not found");
+    joinRoom(code, name);
+  });
+};
+
+function joinRoom(code, name) {
+  playerId = db.ref().push().key;
+  roomRef = db.ref("rooms").child(code);
+
+  roomCodeDisplay.textContent = `room ${code}`;
+
+  roomRef.transaction(state => {
+    if (!state) return state;
+
+    state.players = state.players || {};
+    state.turnOrder = state.turnOrder || {};
+
+    state.players[playerId] = { name, score: 0 };
+    state.turnOrder[playerId] = true;
+
+    if (!state.currentTurn) state.currentTurn = playerId;
+
+    return state;
+  });
+  roomRef.child("players").child(playerId).onDisconnect().remove();
+  roomRef.child("turnOrder").child(playerId).onDisconnect().remove();
+  //roomRef.child("currentTurn").onDisconnect().remove();
+
+  landing.hidden = true;
+  game.hidden = false;
+
+  if (!roomRef) {
+  console.error("roomRef not set");
+  return;
+}
+listenToGame();
+}
+
+function listenToGame() {
+  roomRef.on("value", snap => {
+    const state = snap.val();
+    if (!state) return;
+
+    const players = state.players || {};
+    const turnOrder = state.turnOrder || {};
+    const turnIds = Object.keys(turnOrder);
+
+    const currentTurn = state.currentTurn;
+
+    // If no players, nothing to do
+if (Object.keys(players).length === 0) {
+  roomRef.update({
+    currentTurn: null,
+    deckIndex: 0
+  });
+}
+
+// If currentTurn is invalid (player left)
+if (!state.currentTurn || !turnIds.includes(state.currentTurn)) {
+  roomRef.child("currentTurn").transaction((current) => {
+    // Only fix if still invalid
+    if (current && turnIds.includes(current)) return current;
+    return turnIds[0]; // first remaining player
+  });
+  return;
+}
+
+    // Card
+    cardEl.textContent = state.card || "—";
+
+    // Turn text
+    if (turnIds.length > 0) {
+      const idx = turnIds.indexOf(currentTurn);
+      const next = turnIds[(idx + 1) % turnIds.length];
+      const a = players[currentTurn]?.name || "?";
+      const b = players[next]?.name || "?";
+      turnEl.textContent = `${a} asks ${b}:`;
+    }
+
+    // Buttons
+    const myTurn = currentTurn === playerId;
+    yesBtn.disabled = !myTurn;
+    noBtn.disabled = !myTurn;
+
+    // Players list
+    playersEl.innerHTML = "";
+    Object.entries(players).forEach(([id, p]) => {
+      const div = document.createElement("div");
+      div.className = "player";
+      if (id === currentTurn) div.classList.add("active");
+      div.textContent = `${p.name}: ${p.score || 0}`;
+      playersEl.appendChild(div);
+    });
+  });
+}
+/*
 gameRef.child("players").on("value", (snap) => {
   const players = snap.val();
 
@@ -388,9 +490,31 @@ gameRef.child("players").on("value", (snap) => {
   if (!players || Object.keys(players).length === 0) {
     gameRef.set(null);
   }
-});
+});*/
 
-  // --- ON DISCONNECT CLEANUP ---
+yesBtn.onclick = () => advanceTurn(false);
+noBtn.onclick = () => advanceTurn(true);
+
+function advanceTurn(addPoint) {
+  roomRef.transaction(state => {
+    if (!state || state.currentTurn !== playerId) return state;
+
+    const ids = Object.keys(state.turnOrder || {});
+    const idx = ids.indexOf(playerId);
+    const next = ids[(idx + 1) % ids.length];
+
+    if (addPoint) {
+      state.players[next].score =
+        (state.players[next].score || 0) + 1;
+    }
+
+    state.card = cards[Math.floor(Math.random() * cards.length)];
+    state.currentTurn = next;
+
+    return state;
+  });
+}
+  /*// --- ON DISCONNECT CLEANUP ---
   const playerRef = gameRef.child("players").child(playerId);
   const turnOrderRef = gameRef.child("turnOrder").child(playerId);
   playerRef.onDisconnect().remove();
@@ -427,9 +551,9 @@ gameRef.on("value", (snapshot) => {
   }
 
   
-
+*/
   // Display player list
-  playersEl.innerHTML = "";
+ /* playersEl.innerHTML = "";
 
 // Create a div for each player
 Object.values(players).forEach((p) => {
@@ -440,8 +564,8 @@ Object.values(players).forEach((p) => {
 
   playersEl.appendChild(playerDiv);
 });
-
-
+*/
+/*
   // Display card
   cardEl.textContent = state.card || "Draw a card to begin!";
 
@@ -498,7 +622,7 @@ noBtn.onclick = () => {
     const idx = turnIds.indexOf(playerId);
     const nextPlayer = turnIds[(idx + 1) % turnIds.length];
 
-    // 🔥 Add point to next player
+    //  Add point to next player
     players[nextPlayer].score =
       (players[nextPlayer].score || 0) + 1;
 
@@ -511,3 +635,4 @@ noBtn.onclick = () => {
   });
 };
 
+*/
