@@ -622,7 +622,7 @@ noBtn.onclick = () => {
     const idx = turnIds.indexOf(playerId);
     const nextPlayer = turnIds[(idx + 1) % turnIds.length];
 
-    //  Add point to next player
+    // 🔥 Add point to next player
     players[nextPlayer].score =
       (players[nextPlayer].score || 0) + 1;
 
